@@ -1,0 +1,6 @@
+# Theme & Shell
+shell-integration = zsh
+theme = Catppuccin Mocha
+window-padding-x = 0
+window-padding-y = 0
+font-size = 24

@@ -80,6 +80,9 @@ vim.pack.add({
 	{ src = "https://github.com/nvim-telescope/telescope.nvim" },
 	{ src = "https://github.com/stevearc/conform.nvim" },
 	{ src = "https://github.com/github/copilot.vim" },
+	{ src = "https://github.com/lewis6991/gitsigns.nvim" },
+	{ src = "https://github.com/tpope/vim-fugitive" },
+	{ src = "https://github.com/malewicz1337/oil-git.nvim" },
 })
 
 -- Post plugin config
@@ -174,6 +177,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 })
 
 require("oil").setup()
+require("oil-git").setup()
 vim.keymap.set("n", "<leader>i", "<CMD>Oil<CR>", { noremap = true, silent = true, desc = "Open parent directory" })
 
 require("blink.cmp").setup({
@@ -268,6 +272,7 @@ vim.keymap.set('i', '<C-J>', 'copilot#Accept("\\<CR>")', {
 })
 vim.g.copilot_no_tab_map = true
 
+require("gitsigns").setup()
 
 local pickers = require("telescope.pickers")
 local finders = require("telescope.finders")
@@ -371,3 +376,40 @@ vim.keymap.set("n", "<leader>tw", function()
 
 	vim.fn.system(cmd)
 end, { desc = "Open tmux window in tab cwd" })
+
+local builtin = require("telescope.builtin")
+
+local function get_visual_selection()
+  -- Yank selection into the "v register
+  vim.cmd('noau normal! "vy')
+  local text = vim.fn.getreg("v")
+  vim.fn.setreg("v", {})
+  text = string.gsub(text, "\n", "")
+
+  return text
+end
+
+-- Get visual selection
+local function get_visual_selection()
+  vim.cmd('noau normal! "vy')
+  local text = vim.fn.getreg("v")
+  vim.fn.setreg("v", {})
+  text = string.gsub(text, "\n", "")
+  return text
+end
+
+
+-- Keymap for visual mode
+vim.keymap.set("v", "<leader>sv", function()
+  local text = get_visual_selection()
+  builtin.live_grep({
+    default_text = vim.fn.escape(text, [[\^$.*+?()[\]{}|]]),
+  })
+end, { noremap = true, silent = true })
+
+-- Visual mode keymap: set search register only
+vim.keymap.set("v", "<leader>/", function()
+  local text = get_visual_selection()
+  text = vim.fn.escape(text, [[\^$.*+?()[\]{}|]]),
+  vim.fn.setreg("/", text)
+end, { noremap = true, silent = true })

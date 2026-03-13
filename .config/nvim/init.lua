@@ -30,7 +30,7 @@ vim.diagnostic.config({
 	virtual_text = true,
 	signs = true,
 	underline = true,
-	update_in_insert = true,
+	update_in_insert = false,
 	severity_sort = true,
 })
 
@@ -83,6 +83,7 @@ vim.pack.add({
 	{ src = "https://github.com/lewis6991/gitsigns.nvim" },
 	{ src = "https://github.com/tpope/vim-fugitive" },
 	{ src = "https://github.com/malewicz1337/oil-git.nvim" },
+	{ src = "https://github.com/chenasraf/text-transform.nvim" },
 })
 
 -- Post plugin config
@@ -90,14 +91,12 @@ vim.pack.add({
 vim.cmd.colorscheme("tokyonight")
 
 require("nvim-treesitter").setup({
-	ensure_installed = { "javascript", "typescript", "python", "c", "lua", "vim", "vimdoc", "rust" },
-	sync_install = false,
-	auto_install = true,
-	ignore_install = {},
-	highlight = {
-		enable = true,
-		additional_vim_regex_highlighting = false,
-	},
+	ensure_installed = { "all" },
+})
+vim.api.nvim_create_autocmd("FileType", {
+	callback = function(args)
+		pcall(vim.treesitter.start)
+	end,
 })
 
 --- So that the lualine color doesn't change during insert mode.
@@ -145,9 +144,9 @@ vim.filetype.add({
 vim.lsp.enable("basedpyright")
 vim.lsp.enable("lua_la")
 vim.lsp.enable("rust_analyzer")
-vim.lsp.enable("clangd", {
-	filetypes = { "c", "cpp", "objc", "objcpp" },
-})
+vim.lsp.enable("clangd")
+vim.lsp.enable("zls")
+vim.lsp.enable("gopls")
 
 vim.api.nvim_create_autocmd("LspAttach", {
 	callback = function(args)
@@ -179,6 +178,13 @@ vim.api.nvim_create_autocmd("LspAttach", {
 require("oil").setup()
 require("oil-git").setup()
 vim.keymap.set("n", "<leader>i", "<CMD>Oil<CR>", { noremap = true, silent = true, desc = "Open parent directory" })
+
+require("text-transform").setup({
+	keymap = {
+		telescope_popup = nil,
+	},
+})
+vim.keymap.set({ "n", "v" }, "<leader>rs", ":TtSnake<CR>", { silent = true, desc = "To snake_case" })
 
 require("blink.cmp").setup({
 	keymap = {
@@ -238,6 +244,9 @@ require("conform").setup({
 		python = { "black" },
 		html = { "djlint" },
 		javascript = { "prettier" },
+		zig = { "zigfmt" },
+		c = { "clang-format" },
+		cpp = { "clang-format" },
 	},
 })
 
@@ -266,9 +275,9 @@ end
 require("mini.icons").setup()
 require("nvim-autopairs").setup({})
 
-vim.keymap.set('i', '<C-J>', 'copilot#Accept("\\<CR>")', {
-  expr = true,
-  replace_keycodes = false
+vim.keymap.set("i", "<C-J>", 'copilot#Accept("\\<CR>")', {
+	expr = true,
+	replace_keycodes = false,
 })
 vim.g.copilot_no_tab_map = true
 
@@ -380,36 +389,34 @@ end, { desc = "Open tmux window in tab cwd" })
 local builtin = require("telescope.builtin")
 
 local function get_visual_selection()
-  -- Yank selection into the "v register
-  vim.cmd('noau normal! "vy')
-  local text = vim.fn.getreg("v")
-  vim.fn.setreg("v", {})
-  text = string.gsub(text, "\n", "")
+	-- Yank selection into the "v register
+	vim.cmd('noau normal! "vy')
+	local text = vim.fn.getreg("v")
+	vim.fn.setreg("v", {})
+	text = string.gsub(text, "\n", "")
 
-  return text
+	return text
 end
 
 -- Get visual selection
 local function get_visual_selection()
-  vim.cmd('noau normal! "vy')
-  local text = vim.fn.getreg("v")
-  vim.fn.setreg("v", {})
-  text = string.gsub(text, "\n", "")
-  return text
+	vim.cmd('noau normal! "vy')
+	local text = vim.fn.getreg("v")
+	vim.fn.setreg("v", {})
+	text = string.gsub(text, "\n", "")
+	return text
 end
-
 
 -- Keymap for visual mode
 vim.keymap.set("v", "<leader>sv", function()
-  local text = get_visual_selection()
-  builtin.live_grep({
-    default_text = vim.fn.escape(text, [[\^$.*+?()[\]{}|]]),
-  })
+	local text = get_visual_selection()
+	builtin.live_grep({
+		default_text = vim.fn.escape(text, [[\^$.*+?()[\]{}|]]),
+	})
 end, { noremap = true, silent = true })
 
 -- Visual mode keymap: set search register only
 vim.keymap.set("v", "<leader>/", function()
-  local text = get_visual_selection()
-  text = vim.fn.escape(text, [[\^$.*+?()[\]{}|]]),
-  vim.fn.setreg("/", text)
+	local text = get_visual_selection()
+	text = vim.fn.escape(text, [[\^$.*+?()[\]{}|]]), vim.fn.setreg("/", text)
 end, { noremap = true, silent = true })

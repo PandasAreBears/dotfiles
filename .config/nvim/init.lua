@@ -30,14 +30,14 @@ vim.diagnostic.config({
 	virtual_text = true,
 	signs = true,
 	underline = true,
-	update_in_insert = true,
+	update_in_insert = false,
 	severity_sort = true,
 })
 
 --- Simple editor binding
 vim.keymap.set("n", "<leader>w", vim.cmd.w, { noremap = true, silent = true, desc = "Save" })
 vim.keymap.set("n", "<leader>q", vim.cmd.q, { noremap = true, silent = true, desc = "Quit" })
-vim.keymap.set("n", "<leader>d", vim.cmd.close, { noremap = true, silent = true, desc = "Close window" })
+
 vim.keymap.set("n", "<leader>td", function()
 	vim.diagnostic.enable(not vim.diagnostic.is_enabled())
 end, { silent = true, noremap = true })
@@ -58,8 +58,6 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz")
 vim.keymap.set("n", "n", "nzzzv")
 vim.keymap.set("n", "N", "Nzzzv")
 vim.keymap.set("n", "J", "mzJ`z")
-vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv")
-vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 vim.keymap.set({ "n", "v" }, "<leader>y", [["+y]], { silent = true, desc = "Copy to clipboard" })
 
 -- Plugins
@@ -79,10 +77,10 @@ vim.pack.add({
 	{ src = "https://github.com/nvim-lua/plenary.nvim" },
 	{ src = "https://github.com/nvim-telescope/telescope.nvim" },
 	{ src = "https://github.com/stevearc/conform.nvim" },
-	{ src = "https://github.com/github/copilot.vim" },
 	{ src = "https://github.com/lewis6991/gitsigns.nvim" },
 	{ src = "https://github.com/tpope/vim-fugitive" },
 	{ src = "https://github.com/malewicz1337/oil-git.nvim" },
+	{ src = "https://github.com/chenasraf/text-transform.nvim" },
 })
 
 -- Post plugin config
@@ -90,14 +88,12 @@ vim.pack.add({
 vim.cmd.colorscheme("tokyonight")
 
 require("nvim-treesitter").setup({
-	ensure_installed = { "javascript", "typescript", "python", "c", "lua", "vim", "vimdoc", "rust" },
-	sync_install = false,
-	auto_install = true,
-	ignore_install = {},
-	highlight = {
-		enable = true,
-		additional_vim_regex_highlighting = false,
-	},
+	ensure_installed = { "all" },
+})
+vim.api.nvim_create_autocmd("FileType", {
+	callback = function(args)
+		pcall(vim.treesitter.start)
+	end,
 })
 
 --- So that the lualine color doesn't change during insert mode.
@@ -145,9 +141,7 @@ vim.filetype.add({
 vim.lsp.enable("basedpyright")
 vim.lsp.enable("lua_la")
 vim.lsp.enable("rust_analyzer")
-vim.lsp.enable("clangd", {
-	filetypes = { "c", "cpp", "objc", "objcpp" },
-})
+vim.lsp.enable("clangd")
 
 vim.api.nvim_create_autocmd("LspAttach", {
 	callback = function(args)
@@ -163,9 +157,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
 		vim.keymap.set("n", "<leader>k", function()
 			vim.lsp.buf.definition()
 		end, opts)
-		vim.keymap.set("n", "go", function()
-			vim.diagnostic.open_float()
-		end, opts)
 		vim.keymap.set("n", "<leader>m", function()
 			vim.diagnostic.goto_next()
 		end, opts)
@@ -179,6 +170,13 @@ vim.api.nvim_create_autocmd("LspAttach", {
 require("oil").setup()
 require("oil-git").setup()
 vim.keymap.set("n", "<leader>i", "<CMD>Oil<CR>", { noremap = true, silent = true, desc = "Open parent directory" })
+
+require("text-transform").setup({
+	keymap = {
+		telescope_popup = nil,
+	},
+})
+vim.keymap.set({ "n", "v" }, "<leader>rs", ":TtSnake<CR>", { silent = true, desc = "To snake_case" })
 
 require("blink.cmp").setup({
 	keymap = {
@@ -238,6 +236,11 @@ require("conform").setup({
 		python = { "black" },
 		html = { "djlint" },
 		javascript = { "prettier" },
+		zig = { "zigfmt" },
+		c = { "clang-format" },
+		cpp = { "clang-format" },
+		objc = { "clang-format" },
+		objcpp = { "clang-format" },
 	},
 })
 
@@ -265,12 +268,6 @@ end
 
 require("mini.icons").setup()
 require("nvim-autopairs").setup({})
-
-vim.keymap.set('i', '<C-J>', 'copilot#Accept("\\<CR>")', {
-  expr = true,
-  replace_keycodes = false
-})
-vim.g.copilot_no_tab_map = true
 
 require("gitsigns").setup()
 
@@ -380,36 +377,30 @@ end, { desc = "Open tmux window in tab cwd" })
 local builtin = require("telescope.builtin")
 
 local function get_visual_selection()
-  -- Yank selection into the "v register
-  vim.cmd('noau normal! "vy')
-  local text = vim.fn.getreg("v")
-  vim.fn.setreg("v", {})
-  text = string.gsub(text, "\n", "")
+	vim.cmd('noau normal! "vy')
+	local text = vim.fn.getreg("v")
+	vim.fn.setreg("v", {})
+	text = string.gsub(text, "\n", "")
 
-  return text
+	return text
 end
 
--- Get visual selection
 local function get_visual_selection()
-  vim.cmd('noau normal! "vy')
-  local text = vim.fn.getreg("v")
-  vim.fn.setreg("v", {})
-  text = string.gsub(text, "\n", "")
-  return text
+	vim.cmd('noau normal! "vy')
+	local text = vim.fn.getreg("v")
+	vim.fn.setreg("v", {})
+	text = string.gsub(text, "\n", "")
+	return text
 end
 
-
--- Keymap for visual mode
 vim.keymap.set("v", "<leader>sv", function()
-  local text = get_visual_selection()
-  builtin.live_grep({
-    default_text = vim.fn.escape(text, [[\^$.*+?()[\]{}|]]),
-  })
+	local text = get_visual_selection()
+	builtin.live_grep({
+		default_text = vim.fn.escape(text, [[\^$.*+?()[\]{}|]]),
+	})
 end, { noremap = true, silent = true })
 
--- Visual mode keymap: set search register only
 vim.keymap.set("v", "<leader>/", function()
-  local text = get_visual_selection()
-  text = vim.fn.escape(text, [[\^$.*+?()[\]{}|]]),
-  vim.fn.setreg("/", text)
+	local text = get_visual_selection()
+	text = vim.fn.escape(text, [[\^$.*+?()[\]{}|]]), vim.fn.setreg("/", text)
 end, { noremap = true, silent = true })

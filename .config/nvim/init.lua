@@ -37,7 +37,7 @@ vim.diagnostic.config({
 --- Simple editor binding
 vim.keymap.set("n", "<leader>w", vim.cmd.w, { noremap = true, silent = true, desc = "Save" })
 vim.keymap.set("n", "<leader>q", vim.cmd.q, { noremap = true, silent = true, desc = "Quit" })
-vim.keymap.set("n", "<leader>d", vim.cmd.close, { noremap = true, silent = true, desc = "Close window" })
+
 vim.keymap.set("n", "<leader>td", function()
 	vim.diagnostic.enable(not vim.diagnostic.is_enabled())
 end, { silent = true, noremap = true })
@@ -58,8 +58,6 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz")
 vim.keymap.set("n", "n", "nzzzv")
 vim.keymap.set("n", "N", "Nzzzv")
 vim.keymap.set("n", "J", "mzJ`z")
-vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv")
-vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 vim.keymap.set({ "n", "v" }, "<leader>y", [["+y]], { silent = true, desc = "Copy to clipboard" })
 
 -- Plugins
@@ -79,7 +77,6 @@ vim.pack.add({
 	{ src = "https://github.com/nvim-lua/plenary.nvim" },
 	{ src = "https://github.com/nvim-telescope/telescope.nvim" },
 	{ src = "https://github.com/stevearc/conform.nvim" },
-	{ src = "https://github.com/github/copilot.vim" },
 	{ src = "https://github.com/lewis6991/gitsigns.nvim" },
 	{ src = "https://github.com/tpope/vim-fugitive" },
 	{ src = "https://github.com/malewicz1337/oil-git.nvim" },
@@ -145,8 +142,6 @@ vim.lsp.enable("basedpyright")
 vim.lsp.enable("lua_la")
 vim.lsp.enable("rust_analyzer")
 vim.lsp.enable("clangd")
-vim.lsp.enable("zls")
-vim.lsp.enable("gopls")
 
 vim.api.nvim_create_autocmd("LspAttach", {
 	callback = function(args)
@@ -161,9 +156,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
 		end, opts)
 		vim.keymap.set("n", "<leader>k", function()
 			vim.lsp.buf.definition()
-		end, opts)
-		vim.keymap.set("n", "go", function()
-			vim.diagnostic.open_float()
 		end, opts)
 		vim.keymap.set("n", "<leader>m", function()
 			vim.diagnostic.goto_next()
@@ -247,6 +239,8 @@ require("conform").setup({
 		zig = { "zigfmt" },
 		c = { "clang-format" },
 		cpp = { "clang-format" },
+		objc = { "clang-format" },
+		objcpp = { "clang-format" },
 	},
 })
 
@@ -274,12 +268,6 @@ end
 
 require("mini.icons").setup()
 require("nvim-autopairs").setup({})
-
-vim.keymap.set("i", "<C-J>", 'copilot#Accept("\\<CR>")', {
-	expr = true,
-	replace_keycodes = false,
-})
-vim.g.copilot_no_tab_map = true
 
 require("gitsigns").setup()
 
@@ -389,7 +377,6 @@ end, { desc = "Open tmux window in tab cwd" })
 local builtin = require("telescope.builtin")
 
 local function get_visual_selection()
-	-- Yank selection into the "v register
 	vim.cmd('noau normal! "vy')
 	local text = vim.fn.getreg("v")
 	vim.fn.setreg("v", {})
@@ -398,7 +385,6 @@ local function get_visual_selection()
 	return text
 end
 
--- Get visual selection
 local function get_visual_selection()
 	vim.cmd('noau normal! "vy')
 	local text = vim.fn.getreg("v")
@@ -407,7 +393,6 @@ local function get_visual_selection()
 	return text
 end
 
--- Keymap for visual mode
 vim.keymap.set("v", "<leader>sv", function()
 	local text = get_visual_selection()
 	builtin.live_grep({
@@ -415,7 +400,6 @@ vim.keymap.set("v", "<leader>sv", function()
 	})
 end, { noremap = true, silent = true })
 
--- Visual mode keymap: set search register only
 vim.keymap.set("v", "<leader>/", function()
 	local text = get_visual_selection()
 	text = vim.fn.escape(text, [[\^$.*+?()[\]{}|]]), vim.fn.setreg("/", text)

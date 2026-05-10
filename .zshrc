@@ -4,6 +4,7 @@ path=(
   ~/.local/bin/nvim-macos-arm64/bin
   ~/.cargo/bin
   ~/.local/include
+  ~/.local/lib
 )
 
 export CLICOLOR=1

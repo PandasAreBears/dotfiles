@@ -19,8 +19,6 @@ vim.opt.matchtime = 0
 vim.opt.cmdheight = 0
 vim.opt.laststatus = 3
 vim.opt.termguicolors = true
-vim.opt.wildmenu = true
-vim.opt.wildmode = "longest:full,full"
 
 vim.diagnostic.config({
 	virtual_text = true,
@@ -90,6 +88,10 @@ vim.lsp.enable("clangd")
 vim.lsp.enable("gopls")
 vim.lsp.enable("ruff")
 vim.lsp.enable("ty")
+vim.lsp.config("harper_ls", {
+    filetypes = {"text", "markdown"}
+})
+vim.lsp.enable("harper_ls")
 vim.lsp.log.set_level("off")
 
 vim.api.nvim_create_autocmd("LspAttach", {
@@ -315,6 +317,13 @@ vim.keymap.set("v", "<leader>sv", function()
 	local text = get_visual_selection()
 	builtin.live_grep({
 		default_text = vim.fn.escape(text, [[\^$.*+?()[\]{}|]]),
+	})
+end, { noremap = true, silent = true })
+
+vim.keymap.set("v", "<leader>sf", function()
+	local text = get_visual_selection()
+	builtin.live_grep({
+		default_text = "^" .. vim.fn.escape(text, [[\^$.*+?()[\]{}|]]),
 	})
 end, { noremap = true, silent = true })
 

@@ -14,6 +14,7 @@ alias reload="source ~/.zshrc"
 alias vi=nvim
 alias vim=nvim
 alias shut="sudo shutdown -p now"
+alias sqlite3="sqlite3 -line"
 
 function restow() {
 	pushd ~/.dotfiles

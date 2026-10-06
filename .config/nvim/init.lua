@@ -72,8 +72,6 @@ vim.api.nvim_create_autocmd("FileType", {
 	end,
 })
 
-require("mason").setup()
-
 vim.filetype.add({
 	extension = {
 		m = "objc",
@@ -82,14 +80,11 @@ vim.filetype.add({
 })
 
 vim.lsp.config("ruff", {})
-vim.lsp.enable("lua_la")
 vim.lsp.enable("rust_analyzer")
 vim.lsp.enable("clangd")
-vim.lsp.enable("gopls")
-vim.lsp.enable("ruff")
 vim.lsp.enable("ty")
 vim.lsp.config("harper_ls", {
-    filetypes = {"text", "markdown"}
+	filetypes = { "text", "markdown" },
 })
 vim.lsp.enable("harper_ls")
 vim.lsp.log.set_level("off")
@@ -152,32 +147,10 @@ require("blink.cmp").setup({
 	fuzzy = { implementation = "prefer_rust_with_warning" },
 })
 
-local builtin = require("telescope.builtin")
-require("telescope").setup({
-	pickers = {
-		buffers = {
-			initial_mode = "normal",
-		},
-		bookmarks = {
-			initial_mode = "normal",
-		},
-	},
-})
-
-vim.keymap.set("n", "<leader>p", builtin.find_files, {})
-vim.keymap.set("n", "<leader>o", builtin.lsp_document_symbols, {})
-vim.keymap.set("n", "<leader>sg", builtin.live_grep, {})
-vim.keymap.set("n", "<leader>sh", builtin.help_tags, {})
-
 require("conform").setup({
 	formatters_by_ft = {
-		lua = { "stylua" },
-		json = { "jq" },
 		rust = { "rustfmt" },
 		python = { "ruff" },
-		html = { "djlint" },
-		javascript = { "prettier" },
-		zig = { "zigfmt" },
 		c = { "clang-format" },
 		cpp = { "clang-format" },
 		objc = { "clang-format" },
@@ -196,55 +169,6 @@ local finders = require("telescope.finders")
 local conf = require("telescope.config").values
 local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
-
---- Telescope tab picker
-
-local function tab_cwd_picker()
-	local tabs = vim.api.nvim_list_tabpages()
-	local results = {}
-
-	for _, tab in ipairs(tabs) do
-		local tabnr = vim.api.nvim_tabpage_get_number(tab)
-		local cwd = vim.fn.getcwd(-1, tabnr)
-
-		table.insert(results, {
-			tabnr = tabnr,
-			cwd = cwd,
-			display = string.format("%d: %s", tabnr, cwd),
-		})
-	end
-
-	pickers
-		.new({}, {
-			prompt_title = "Tabs",
-			finder = finders.new_table({
-				results = results,
-				entry_maker = function(entry)
-					return {
-						value = entry,
-						display = entry.display,
-						ordinal = entry.cwd,
-					}
-				end,
-			}),
-			sorter = conf.generic_sorter({}),
-			attach_mappings = function(prompt_bufnr, map)
-				actions.select_default:replace(function()
-					actions.close(prompt_bufnr)
-					local selection = action_state.get_selected_entry()
-					vim.cmd("tabnext " .. selection.value.tabnr)
-				end)
-				return true
-			end,
-		})
-		:find()
-end
-
-vim.keymap.set("n", "<leader>st", function()
-	tab_cwd_picker()
-end, { silent = true, noremap = true, desc = "Search Tabs" })
-
---- File system tcd
 
 local function home_dir_picker()
 	local home = vim.loop.os_homedir()
@@ -284,26 +208,7 @@ vim.keymap.set("n", "<leader>to", function()
 	home_dir_picker()
 end, { silent = true, noremap = true, desc = "Select working directory" })
 
-vim.keymap.set("n", "<leader>tw", function()
-	local tabnr = vim.api.nvim_tabpage_get_number(0)
-	local cwd = vim.fn.getcwd(-1, tabnr)
-
-	local escaped = vim.fn.shellescape(cwd)
-	local cmd = "tmux new-window -c " .. escaped
-
-	vim.fn.system(cmd)
-end, { desc = "Open tmux window in tab cwd" })
-
 local builtin = require("telescope.builtin")
-
-local function get_visual_selection()
-	vim.cmd('noau normal! "vy')
-	local text = vim.fn.getreg("v")
-	vim.fn.setreg("v", {})
-	text = string.gsub(text, "\n", "")
-
-	return text
-end
 
 local function get_visual_selection()
 	vim.cmd('noau normal! "vy')
